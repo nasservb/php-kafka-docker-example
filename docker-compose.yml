@@ -1,0 +1,87 @@
+version: '3.7'
+services:
+
+  php:
+    image: docker.io/nasservb/laravel-php
+    volumes:
+      - ./:/var/www/
+    env_file:
+      - ./.env
+    ports:
+      - "9000:9000"
+    networks:
+      - app-network
+
+  webserver:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./app:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+      
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:latest
+    container_name: zookeeper
+    volumes:
+      - ./zookeeper_data:/bitnami
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - app-network
+
+  kafka:
+    image: docker.io/bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - '9093:9093'
+    volumes:
+      - ./kafka_data:/bitnami
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+    networks:
+      - app-network
+
+ db:
+    image: mysql:8
+    container_name: db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=app
+      - MYSQL_ROOT_PASSWORD="12345678"
+      - MYSQL_AUTHENTICATION_PLUGIN=mysql_native_password
+    volumes:
+      - ./mysql/data:/var/lib/mysql/
+    networks:
+      - app-network
+ 
+
+  phpmyadmin:
+    image: phpmyadmin:5.0.4    
+    restart: unless-stopped
+    ports:
+      - 8080:80
+    networks:
+      - app-network  
+
+networks:
+  app-network:
+    driver: bridge
