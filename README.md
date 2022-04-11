@@ -1,4 +1,4 @@
-# use-kafka-in-docker-compose
+# how to use kafka in php when using docker-compose
 by using this project, you could use kafka in php. 
 #how to use : 
 ```bash
