@@ -4,7 +4,6 @@ by using this project, you could use kafka in php.
 # pull images and up project: 
 ```bash
 docker-compose up -d
-exit
 ```
 # add kafka extention on php:
 ```bash
